@@ -13,26 +13,112 @@ output:
 
 ```{r setup, include=FALSE}
 library(lpSolve)
+library(lpSolveAPI)
+Sys.setenv(LANGUAGE='en') 
 ```
 
-```{r}
-obj.fun = c(20 , 60)
-constr = matrix (c(30 , 20, 5, 10, 1, 1) , ncol = 2, byrow = TRUE)
+# 9.1
+```{r, results='asis'}
+#define parameters
+obj.fun = c(8,6,10)
+constr = matrix(c(0.2,0.4,0.6,0.6,0.2,0.5,0.4,0.4,0.4), ncol = 3, byrow = TRUE)
+constr.dir = c("<=","<=","<=")
+rhs = c(150,150,600)
 
-constr.dir = c("<=", "<=", ">=")
-rhs = c(2700 , 850 , 95)
+#solve the problem
+prod.sol = lp("max",obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
 
-#solving model
-prod.sol = lp("max", obj.fun , constr , constr.dir , rhs , compute.sens = TRUE )
+#optimal solution
+cat(paste(c('Objective Value: ',prod.sol$objval,'\nSolution:',prod.sol$solution,'\nDuals:',prod.sol$duals)))
+```
 
-#accessing to R output
-prod.sol$obj.val 
-prod.sol$solution
+# PL Model
+```{r, results='asis'}
+#define parameters
+obj.fun = c(20,60)
+constr = matrix(c(30,20,5,10,1,1), ncol = 2, byrow = TRUE)
+constr.dir = c("<=","<=",">=")
+rhs = c(2700,850,95)
 
-prod.sol$duals
+#solve the problem
+prod.sol = lp("max",obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
 
-prod.sol$duals.from
-prod.sol$duals.to
-prod.sol$sens.coef.from
-prod.sol$sens.coef.to
+#optimal solution
+cat(paste(c('Objective Value: ',prod.sol$objval,'\nSolution:',prod.sol$solution,'\nDuals:',prod.sol$duals)))
+```
+
+# Transportation
+```{r, results='asis'}
+lprec = make.lp(0,6)
+lp.control(lprec,sense="min")
+set.objfn(lprec, c(8,6,3,2,4,9))
+add.constraint(lprec,c(1,1,1,0,0,0),"<=",70)
+add.constraint(lprec,c(0,0,0,1,1,1),"<=",40)
+add.constraint(lprec,c(1,0,0,1,0,0),">=",40)
+add.constraint(lprec,c(0,1,0,0,1,0),">=",35)
+add.constraint(lprec,c(0,0,1,0,0,1),">=",20)
+
+solve(lprec)
+get.objective(lprec)
+get.variables(lprec)
+get.dual.solution(lprec)
+```
+
+# 9.3
+```{r, results='asis'}
+#define parameters
+obj.fun = c(0.95,1.15,-1,-1)
+constr = matrix(c(0.8,-0.2,0,0,
+                  0.4,-0.6,0,0,
+                  1.0,-3,0,0,
+                  0,1,0,-5,
+                  0.8,0.6,1,1), ncol = 4, byrow = TRUE)
+constr.dir = c(">=","<=","<=","<=","<=")
+rhs = c(0,0,5000,4000,16000)
+
+#solve the problem
+prod.sol = lp("max",obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
+
+#optimal solution
+cat(paste(c('Objective Value: ',prod.sol$objval,'\nSolution:',prod.sol$solution,'\nDuals:',prod.sol$duals)))
+```
+
+# 9.7
+```{r, results='asis'}
+#define parameters
+obj.fun = c(10.7,12,8,6.5)
+constr = matrix(c(1,0,1,0,
+                  0,1,0,1,
+                  0.15,0.1,0,0,
+                  0.2,0.2,0,0,
+                  0.1,0.15,0,0,
+                  0,0,1,1), ncol = 4, byrow = TRUE)
+constr.dir = c("<=","<=","<=","<=","<=","<=")
+rhs = c(20000,10000,2000,4200,2500,20000)
+
+#solve the problem
+prod.sol = lp("max",obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
+
+#optimal solution
+cat(paste(c('Objective Value: ',prod.sol$objval,'\nSolution:',prod.sol$solution,'\nDuals:',prod.sol$duals)))
+```
+
+# 9.10
+```{r, results='asis'}
+lprec = make.lp(0,3)
+lp.control(lprec,sense="max")
+set.objfn(lprec, c(0.5525,0.85,0.735))
+add.constraint(lprec,c(0.2,0.35,0.1),"<=",40000)
+add.constraint(lprec,c(0.4,0.15,0.35),"<=",25000)
+add.constraint(lprec,c(0.15,0.2,0.4),"<=",20000)
+add.constraint(lprec,c(0.25,0.3,0.15),"<=",45000)
+add.constraint(lprec,c(1,1,1),"<=",100000)
+add.constraint(lprec,c(1,0,0),"<=",10000)
+add.constraint(lprec,c(0,1,0),"<=",25000)
+add.constraint(lprec,c(0,0,1),"<=",30000)
+
+solve(lprec)
+get.objective(lprec)
+get.variables(lprec)
+get.dual.solution(lprec)
 ```

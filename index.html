@@ -281,30 +281,162 @@ div.tocify {
 </div>
 
 
-<pre class="r"><code>obj.fun = c(20 , 60)
-constr = matrix (c(30 , 20, 5, 10, 1, 1) , ncol = 2, byrow = TRUE)
+<div id="section" class="section level1">
+<h1>9.1</h1>
+<pre class="r"><code>#define parameters
+obj.fun = c(8,6,10)
+constr = matrix(c(0.2,0.4,0.6,0.6,0.2,0.5,0.4,0.4,0.4), ncol = 3, byrow = TRUE)
+constr.dir = c(&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;)
+rhs = c(150,150,600)
 
-constr.dir = c(&quot;&lt;=&quot;, &quot;&lt;=&quot;, &quot;&gt;=&quot;)
-rhs = c(2700 , 850 , 95)
+#solve the problem
+prod.sol = lp(&quot;max&quot;,obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
 
-#solving model
-prod.sol = lp(&quot;max&quot;, obj.fun , constr , constr.dir , rhs , compute.sens = TRUE )
+#optimal solution
+cat(paste(c(&#39;Objective Value: &#39;,prod.sol$objval,&#39;\nSolution:&#39;,prod.sol$solution,&#39;\nDuals:&#39;,prod.sol$duals)))</code></pre>
+<p>Objective Value: 3000 Solution: 150 300 0 Duals: 10 10 0 0 0 -1</p>
+</div>
+<div id="pl-model" class="section level1">
+<h1>PL Model</h1>
+<pre class="r"><code>#define parameters
+obj.fun = c(20,60)
+constr = matrix(c(30,20,5,10,1,1), ncol = 2, byrow = TRUE)
+constr.dir = c(&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&gt;=&quot;)
+rhs = c(2700,850,95)
 
-#accessing to R output
-prod.sol$obj.val </code></pre>
-<pre><code>## NULL</code></pre>
-<pre class="r"><code>prod.sol$solution</code></pre>
-<pre><code>## [1] 20 75</code></pre>
-<pre class="r"><code>prod.sol$duals</code></pre>
-<pre><code>## [1]   0   8 -20   0   0</code></pre>
-<pre class="r"><code>prod.sol$duals.from</code></pre>
-<pre><code>## [1] -1.0e+30  5.5e+02  8.5e+01 -1.0e+30 -1.0e+30</code></pre>
-<pre class="r"><code>prod.sol$duals.to</code></pre>
-<pre><code>## [1] 1.0e+30 9.5e+02 1.1e+02 1.0e+30 1.0e+30</code></pre>
-<pre class="r"><code>prod.sol$sens.coef.from</code></pre>
-<pre><code>## [1] -1e+30  4e+01</code></pre>
-<pre class="r"><code>prod.sol$sens.coef.to</code></pre>
-<pre><code>## [1] 3e+01 1e+30</code></pre>
+#solve the problem
+prod.sol = lp(&quot;max&quot;,obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
+
+#optimal solution
+cat(paste(c(&#39;Objective Value: &#39;,prod.sol$objval,&#39;\nSolution:&#39;,prod.sol$solution,&#39;\nDuals:&#39;,prod.sol$duals)))</code></pre>
+<p>Objective Value: 4900 Solution: 20 75 Duals: 0 8 -20 0 0</p>
+</div>
+<div id="transportation" class="section level1">
+<h1>Transportation</h1>
+<pre class="r"><code>lprec = make.lp(0,6)
+lp.control(lprec,sense=&quot;min&quot;)</code></pre>
+<p>$anti.degen [1] “fixedvars” “stalling”</p>
+<p>$basis.crash [1] “none”</p>
+<p>$bb.depthlimit [1] -50</p>
+<p>$bb.floorfirst [1] “automatic”</p>
+<p>$bb.rule [1] “pseudononint” “greedy” “dynamic” “rcostfixing”</p>
+<p>$break.at.first [1] FALSE</p>
+<p>$break.at.value [1] -1e+30</p>
+<p>$epsilon epsb epsd epsel epsint epsperturb epspivot 1e-10 1e-09 1e-12 1e-07 1e-05 2e-07</p>
+<p>$improve [1] “dualfeas” “thetagap”</p>
+<p>$infinite [1] 1e+30</p>
+<p>$maxpivot [1] 250</p>
+<p>$mip.gap absolute relative 1e-11 1e-11</p>
+<p>$negrange [1] -1e+06</p>
+<p>$obj.in.basis [1] TRUE</p>
+<p>$pivoting [1] “devex” “adaptive”</p>
+<p>$presolve [1] “none”</p>
+<p>$scalelimit [1] 5</p>
+<p>$scaling [1] “geometric” “equilibrate” “integers”</p>
+<p>$sense [1] “minimize”</p>
+<p>$simplextype [1] “dual” “primal”</p>
+<p>$timeout [1] 0</p>
+<p>$verbose [1] “neutral”</p>
+<pre class="r"><code>set.objfn(lprec, c(8,6,3,2,4,9))
+add.constraint(lprec,c(1,1,1,0,0,0),&quot;&lt;=&quot;,70)
+add.constraint(lprec,c(0,0,0,1,1,1),&quot;&lt;=&quot;,40)
+add.constraint(lprec,c(1,0,0,1,0,0),&quot;&gt;=&quot;,40)
+add.constraint(lprec,c(0,1,0,0,1,0),&quot;&gt;=&quot;,35)
+add.constraint(lprec,c(0,0,1,0,0,1),&quot;&gt;=&quot;,20)
+
+solve(lprec)</code></pre>
+<p>[1] 0</p>
+<pre class="r"><code>get.objective(lprec)</code></pre>
+<p>[1] 350</p>
+<pre class="r"><code>get.variables(lprec)</code></pre>
+<p>[1] 0 35 20 40 0 0</p>
+<pre class="r"><code>get.dual.solution(lprec)</code></pre>
+<p>[1] 1 0 -2 4 6 3 4 0 0 0 0 8</p>
+</div>
+<div id="section-1" class="section level1">
+<h1>9.3</h1>
+<pre class="r"><code>#define parameters
+obj.fun = c(0.95,1.15,-1,-1)
+constr = matrix(c(0.8,-0.2,0,0,
+                  0.4,-0.6,0,0,
+                  1.0,-3,0,0,
+                  0,1,0,-5,
+                  0.8,0.6,1,1), ncol = 4, byrow = TRUE)
+constr.dir = c(&quot;&gt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;)
+rhs = c(0,0,5000,4000,16000)
+
+#solve the problem
+prod.sol = lp(&quot;max&quot;,obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
+
+#optimal solution
+cat(paste(c(&#39;Objective Value: &#39;,prod.sol$objval,&#39;\nSolution:&#39;,prod.sol$solution,&#39;\nDuals:&#39;,prod.sol$duals)))</code></pre>
+<p>Objective Value: 20750 Solution: 4200 16800 0 2560 Duals: 0 0 0 0.4375 1.1875 0 0 -2.1875 0</p>
+</div>
+<div id="section-2" class="section level1">
+<h1>9.7</h1>
+<pre class="r"><code>#define parameters
+obj.fun = c(10.7,12,8,6.5)
+constr = matrix(c(1,0,1,0,
+                  0,1,0,1,
+                  0.15,0.1,0,0,
+                  0.2,0.2,0,0,
+                  0.1,0.15,0,0,
+                  0,0,1,1), ncol = 4, byrow = TRUE)
+constr.dir = c(&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;)
+rhs = c(20000,10000,2000,4200,2500,20000)
+
+#solve the problem
+prod.sol = lp(&quot;max&quot;,obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
+
+#optimal solution
+cat(paste(c(&#39;Objective Value: &#39;,prod.sol$objval,&#39;\nSolution:&#39;,prod.sol$solution,&#39;\nDuals:&#39;,prod.sol$duals)))</code></pre>
+<p>Objective Value: 298000 Solution: 6666.66666666667 10000 13333.3333333333 0 Duals: 8 10.2 18 0 0 0 0 0 0 -3.7</p>
+</div>
+<div id="section-3" class="section level1">
+<h1>9.10</h1>
+<pre class="r"><code>lprec = make.lp(0,3)
+lp.control(lprec,sense=&quot;max&quot;)</code></pre>
+<p>$anti.degen [1] “fixedvars” “stalling”</p>
+<p>$basis.crash [1] “none”</p>
+<p>$bb.depthlimit [1] -50</p>
+<p>$bb.floorfirst [1] “automatic”</p>
+<p>$bb.rule [1] “pseudononint” “greedy” “dynamic” “rcostfixing”</p>
+<p>$break.at.first [1] FALSE</p>
+<p>$break.at.value [1] 1e+30</p>
+<p>$epsilon epsb epsd epsel epsint epsperturb epspivot 1e-10 1e-09 1e-12 1e-07 1e-05 2e-07</p>
+<p>$improve [1] “dualfeas” “thetagap”</p>
+<p>$infinite [1] 1e+30</p>
+<p>$maxpivot [1] 250</p>
+<p>$mip.gap absolute relative 1e-11 1e-11</p>
+<p>$negrange [1] -1e+06</p>
+<p>$obj.in.basis [1] TRUE</p>
+<p>$pivoting [1] “devex” “adaptive”</p>
+<p>$presolve [1] “none”</p>
+<p>$scalelimit [1] 5</p>
+<p>$scaling [1] “geometric” “equilibrate” “integers”</p>
+<p>$sense [1] “maximize”</p>
+<p>$simplextype [1] “dual” “primal”</p>
+<p>$timeout [1] 0</p>
+<p>$verbose [1] “neutral”</p>
+<pre class="r"><code>set.objfn(lprec, c(0.5525,0.85,0.735))
+add.constraint(lprec,c(0.2,0.35,0.1),&quot;&lt;=&quot;,40000)
+add.constraint(lprec,c(0.4,0.15,0.35),&quot;&lt;=&quot;,25000)
+add.constraint(lprec,c(0.15,0.2,0.4),&quot;&lt;=&quot;,20000)
+add.constraint(lprec,c(0.25,0.3,0.15),&quot;&lt;=&quot;,45000)
+add.constraint(lprec,c(1,1,1),&quot;&lt;=&quot;,100000)
+add.constraint(lprec,c(1,0,0),&quot;&lt;=&quot;,10000)
+add.constraint(lprec,c(0,1,0),&quot;&lt;=&quot;,25000)
+add.constraint(lprec,c(0,0,1),&quot;&lt;=&quot;,30000)
+
+solve(lprec)</code></pre>
+<p>[1] 0</p>
+<pre class="r"><code>get.objective(lprec)</code></pre>
+<p>[1] 48825</p>
+<pre class="r"><code>get.variables(lprec)</code></pre>
+<p>[1] 10000 25000 30000</p>
+<pre class="r"><code>get.dual.solution(lprec)</code></pre>
+<p>[1] 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.5525 0.8500 0.7350 0.0000 [11] 0.0000 0.0000</p>
+</div>
 
 
 
