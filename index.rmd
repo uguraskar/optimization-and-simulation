@@ -272,9 +272,72 @@ cat(paste(c('Variables: ',get.variables(lprec))))
 cat(paste(c('Solution: ',get.dual.solution(lprec))))
 ```
 
-# Q11.1
+# Post Office
 
-```{r}
+```{r, results=FALSE}
+lprec <- make.lp(0,14)
+lp.control(lprec, sense="min")
+```
+```{r, results='asis'}
+set.objfn(lprec, c(120,120,120,120,120,120,120,40,40,40,40,40,40,40))
+add.constraint(lprec, c(8,0,0,8,8,8,8,4,0,0,4,4,4,4), ">=", 136)
+add.constraint(lprec, c(8,8,0,0,8,8,8,4,4,0,0,4,4,4), ">=", 104)
+add.constraint(lprec, c(8,8,8,0,0,8,8,4,4,4,0,0,4,4), ">=", 120)
+add.constraint(lprec, c(8,8,8,8,0,0,8,4,4,4,4,0,0,4), ">=", 152)
+add.constraint(lprec, c(8,8,8,8,8,0,0,4,4,4,4,4,0,0), ">=", 112)
+add.constraint(lprec, c(0,8,8,8,8,8,0,0,4,4,4,4,4,0), ">=", 128)
+add.constraint(lprec, c(0,0,8,8,8,8,8,0,0,4,4,4,4,4), ">=", 88)
+add.constraint(lprec, c(1,1,1,1,1,1,1,-3,-3,-3,-3,-3,-3,-3), ">=", 0)
+
+solve(lprec)
+cat(paste(c('Objective Value: ',get.objective(lprec))))
+cat(paste(c('Variables: ',get.variables(lprec))))
+cat(paste(c('Solution: ',get.dual.solution(lprec))))
+```
+
+# Cargo
+
+```{r, results=FALSE}
+lprec <- make.lp(0,12)
+lp.control(lprec, sense="max")
+```
+```{r, results='asis'}
+set.objfn(lprec, c(2000,2500,5000,3500,2000,2500,5000,3500,2000,2500,5000,3500))
+add.constraint(lprec, c(400,300,200,500,0,0,0,0,0,0,0,0), "<=", 5000)
+add.constraint(lprec, c(0,0,0,0,400,300,200,500,0,0,0,0), "<=", 4000)
+add.constraint(lprec, c(0,0,0,0,0,0,0,0,400,300,200,500), "<=", 8000)
+add.constraint(lprec, c(1,1,1,1,0,0,0,0,0,0,0,0), "<=", 10)
+add.constraint(lprec, c(0,0,0,0,1,1,1,1,0,0,0,0), "<=", 8)
+add.constraint(lprec, c(0,0,0,0,0,0,0,0,1,1,1,1), "<=", 12)
+add.constraint(lprec, c(1,0,0,0,1,0,0,0,1,0,0,0), "<=", 18)
+add.constraint(lprec, c(0,1,0,0,0,1,0,0,0,1,0,0), "<=", 10)
+add.constraint(lprec, c(0,0,1,0,0,0,1,0,0,0,1,0), "<=", 5)
+add.constraint(lprec, c(0,0,0,1,0,0,0,1,0,0,0,1), "<=", 20)
+
+solve(lprec)
+cat(paste(c('Objective Value: ',get.objective(lprec))))
+cat(paste(c('Variables: ',get.variables(lprec))))
+cat(paste(c('Solution: ',get.dual.solution(lprec))))
+```
+
+# Selecting Projects
+
+The Texas Electronics Company(TEC) is contemplating a research and development program encompassing eight major projects. The company is constrained from embarking on all projects by the number of available scientists(40) and the budget available for projects(\$300,000).
+
+Following are the resource requirements and the estimated profit for each project:
+
+| Project 	| Expense (\$000) 	| Scientists Required 	| Profit (\$000) 	|
+|:-------:	|:---------------:	|:-------------------:	|:--------------:	|
+|  **1**  	| 60              	| 7                   	| 36             	|
+|  **2**  	| 110             	| 9                   	| 82             	|
+|  **3**  	| 53              	| 8                   	| 29             	|
+|  **4**  	| 147             	| 4                   	| 16             	|
+|  **5**  	| 192             	| 7                   	| 56             	|
+|  **6**  	| 185             	| 6                   	| 61             	|
+|  **7**  	| 173             	| 8                   	| 48             	|
+|  **8**  	| 165             	| 5                   	| 41             	|
+
+```{r, results=FALSE}
 library(lpSolveAPI)
 DataForModel <- read.table(
   "Week5_Q11_1.csv", 
@@ -293,7 +356,8 @@ ConstraintNames <- colnames(DataForModel[3:(NoOfConstraints+2)])
 
 # maximize the profit 
 lp.control(lpModel, sense="max")
-
+```
+```{r, results='asis'}
 # Setting all variable types to be binary
 for(i in 1:NoOfVariables){ 
   set.type(lpModel,i,"binary")
@@ -318,16 +382,15 @@ obj.profit <- DataForModel[1:NoOfVariables,2]
 set.objfn(lpModel, obj.profit)
 
 #Check the model
-lpModel
+#lpModel
+
 # In order to be able to visually check the model, you can write the model to a text file 
 write.lp(lpModel,'modelQ11_1.lp',type='lp')
 
-# Solving the model
-solve(lpModel) 
-
-#get the solution 
-get.objective(lpModel)
-get.variables(lpModel)
+solve(lpModel)
+cat(paste(c('Objective Value: ',get.objective(lpModel))))
+cat(paste(c('Variables: ',get.variables(lpModel))))
+cat(paste(c('Solution: ',get.dual.solution(lpModel))))
 ```
 
 
