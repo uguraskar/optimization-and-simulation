@@ -394,8 +394,23 @@ cat(paste(c('Solution: ',get.dual.solution(lpModel))))
 ```
 
 
-# Q11.1
-```{r}
+# Warehouse
+
+A company is considering opening warehouses in four cities New York, Los Angeles, Chicago, and Atlanta. Each warehouse can ship 100 units per week. The weekly fixed cost of keeping each warehouse open is \$400 for New York, \$500 for Los Angeles, \$300 for Chicago, and \$150 for Atlanta. Region 1 of the country requires 80 units per week, region 2 requires 70 units per week, and region 3 requires 40 units per week. The costs(including production and shipping costs) of sending one unit from a plant to a region are show in Table below. We want to meet weekly demands at minimum costs, subject to the preceding information and the following restrictions:
+
+* If the New York warehouse is opened, the the Los Angeles warehouse must be opened.
+* At most two warehouses can be opened
+* Either the Atlanta or the Los Angeles warehouse must be opened.
+
+|       From      	| Region 1 	| Region 2 	| Region 3 	| Capacity 	|  fi 	|
+|:---------------:	|:--------:	|:--------:	|:--------:	|:--------:	|:---:	|
+|   **New York**  	| 20       	| 40       	| 50       	| 100      	| 400 	|
+| **Los Angeles** 	| 48       	| 15       	| 26       	| 100      	| 500 	|
+|   **Chicago**   	| 26       	| 35       	| 18       	| 100      	| 300 	|
+|   **Atlanta**   	| 24       	| 50       	| 35       	| 100      	| 150 	|
+|      Demand     	| 80       	| 70       	| 40       	|          	|     	|
+
+```{r, results=FALSE}
 library(lpSolveAPI)
 DataForModel <- read.table(
   "Week5_ICA_Q1.csv", 
@@ -414,7 +429,9 @@ ConstraintNames <- colnames(DataForModel[3:(NoOfConstraints+2)])
 
 # maximize the profit 
 lp.control(lpModel, sense="min")
+```
 
+```{r, results='asis'}
 # Setting all variable types to be binary
 for(i in 1:4){ 
   set.type(lpModel,i,"binary")
@@ -439,16 +456,14 @@ obj.profit <- DataForModel[1:NoOfVariables,2]
 set.objfn(lpModel, obj.profit)
 
 #Check the model
-lpModel
+#lpModel
 # In order to be able to visually check the model, you can write the model to a text file 
 write.lp(lpModel,'modelICA_Q1.lp',type='lp')
 
-# Solving the model
-solve(lpModel) 
-
-#get the solution 
-get.objective(lpModel)
-get.variables(lpModel)
+solve(lpModel)
+cat(paste(c('Objective Value: ',get.objective(lpModel))))
+cat(paste(c('Variables: ',get.variables(lpModel))))
+cat(paste(c('Solution: ',get.dual.solution(lpModel))))
 ```
 
 # Research and Development Planning Simulation
@@ -459,30 +474,29 @@ A firm is in the process of assessing the economic prospects for a new bottling 
 * What is the probablity of a positive NPV?
 
 ```{r, results='asis'}
-NPV <- NULL
+NPV = NULL
 
 for(j in 1:10000) { 
 #Variables
-RDCost <- rtriangle(n=1, 4000, 9000, 7000)
-ProdCost <- rtriangle(n=1, 11, 15, 13)
-Price <- runif(n=1, min=20, max=25)
-Sales <- rtriangle(n=1, 100, 500, 300)
-Life <- sample(3:10, 1)
-# Life <- sample(x = c(3, 4, 5, 6, 7, 8, 9, 10), size=1, prob=(1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8), replace=T)  
-DiscountRate <- 0.1
-DiscountedValue <- RDCost * (-1)
-NPV_sub <- 0
+RDCost = rtriangle(n=1, 4000, 9000, 7000)
+ProdCost = rtriangle(n=1, 11, 15, 13)
+Price = runif(n=1, min=20, max=25)
+Sales = rtriangle(n=1, 100, 500, 300)
+Life = sample(3:10, 1)
+# Life = sample(x = c(3, 4, 5, 6, 7, 8, 9, 10), size=1, prob=(1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8), replace=T)  
+DiscountRate = 0.1
+DiscountedValue = RDCost * (-1)
+NPV_sub = 0
 
 
-for(i in 1:Life) { 
-
+for(i in 1:Life) {
   DiscountedValue = DiscountedValue + ((Price - ProdCost) * Sales) / ((1 + DiscountRate)**i)
   NPV_sub = NPV_sub + DiscountedValue
-  DiscountedValue <- 0
+  DiscountedValue = 0
   
 }
 
-NPV[j] <- NPV_sub 
+NPV[j] = NPV_sub 
 
 }
 
