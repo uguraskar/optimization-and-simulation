@@ -281,23 +281,94 @@ div.tocify {
 </div>
 
 
-<div id="section" class="section level1">
-<h1>9.1</h1>
-<pre class="r"><code>#define parameters
-obj.fun = c(8,6,10)
-constr = matrix(c(0.2,0.4,0.6,0.6,0.2,0.5,0.4,0.4,0.4), ncol = 3, byrow = TRUE)
-constr.dir = c(&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;)
-rhs = c(150,150,600)
+<div id="production-planning" class="section level1">
+<h1>Production Planning</h1>
+<p>The Bogard Corporation produces three types of bookcases, which it sells to large office supply companies. The production of each bookcase requires two machine operations, trimming and shaping, followed by assembly, which includes inspection and packaging. All three types require 0.4 hours of assebly time, but the machining operations have different processing times, as shown in the following table, in hours per unit:</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="center">Standart</th>
+<th align="center">Narrow</th>
+<th align="center">Wide</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Trimmer</strong></td>
+<td align="center">0.2</td>
+<td align="center">0.4</td>
+<td align="center">0.6</td>
+</tr>
+<tr class="even">
+<td><strong>Shaper</strong></td>
+<td align="center">0.6</td>
+<td align="center">0.2</td>
+<td align="center">0.5</td>
+</tr>
+</tbody>
+</table>
+<p>Each machine is available 150 hours per month, and the current size of the assembly department provides capacity of 600 hours. Each bookcase produced yields a unit profit contribution as follows:</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="center">Standart</th>
+<th align="center">Narrow</th>
+<th align="center">Wide</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Profit</strong></td>
+<td align="center">8</td>
+<td align="center">6</td>
+<td align="center">10</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>lprec = make.lp(0,3)
+lp.control(lprec,sense=&quot;max&quot;)</code></pre>
+<pre class="r"><code>set.objfn(lprec, c(8,6,10))
+add.constraint(lprec,c(0.2,0.4,0.6),&quot;&lt;=&quot;,150)
+add.constraint(lprec,c(0.6,0.2,0.5),&quot;&lt;=&quot;,150)
+add.constraint(lprec,c(0.4,0.4,0.4),&quot;&lt;=&quot;,600)
 
-#solve the problem
-prod.sol = lp(&quot;max&quot;,obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
-
-#optimal solution
-cat(paste(c(&#39;Objective Value: &#39;,prod.sol$objval,&#39;\nSolution:&#39;,prod.sol$solution,&#39;\nDuals:&#39;,prod.sol$duals)))</code></pre>
-<p>Objective Value: 3000 Solution: 150 300 0 Duals: 10 10 0 0 0 -1</p>
+solve(lprec)</code></pre>
+<p>[1] 0</p>
+<pre class="r"><code>cat(paste(c(&#39;Objective Value: &#39;,get.objective(lprec))))</code></pre>
+<p>Objective Value: 3000</p>
+<pre class="r"><code>cat(paste(c(&#39;Variables: &#39;,get.variables(lprec))))</code></pre>
+<p>Variables: 150 300 0</p>
+<pre class="r"><code>cat(paste(c(&#39;Solution: &#39;,get.dual.solution(lprec))))</code></pre>
+<p>Solution: 1 10 10 0 0 0 -1</p>
 </div>
 <div id="pl-model" class="section level1">
 <h1>PL Model</h1>
+<p>Let’s consider the following situation:</p>
+<p>A small business sells two products, named Product 1 and Product 2. Each tonne of Product 1 consumes 30 working hours, and each tonne of Product 2 consumes 20 working hours. The business has a maximum of 2,700 working hours for the period considered. As for machine hours, each tonne of Products 1 and 2 consumes 5 and 10 machine hours, respectively. There are 850 machine hours available.</p>
+<p>Each tonne of Product 1 yields 20 Me of profit, while Product 2 yields 60 Me for each tonne sold. For technical reasons, the firm must produce a minimum of 95 tonnes in total between both products. We need to know how many tonnes of Product 1 and 2 must be produced to maximize total profit.</p>
+<p>This situation is apt to be modeled as a PL model. First, we need to define the decision variables. In this case we have:</p>
+<ul>
+<li>P1 number of tonnes produced and sold of Product 1</li>
+<li>P2 number of tonnes produced and sold of Product 2</li>
+</ul>
+<p>The cost coefficients of these variables are 20 and 60, respectively. Therefore, the objective function is defined multiplying each variable by its corresponding cost coefficient.</p>
+<p>The constraints of this LP are:</p>
+<ul>
+<li>A constraint WH making that the total amount of working hours used in Product 1 and Product 2, which equals 30P1 + 20P2, is less or equal than 2,700 hours.</li>
+<li>A similar constraint MH making that the total machine hours 5P1 + 10P2 are less or equal than 850.</li>
+<li>A PM constraint making that the total units produced and sold P1 + P2 are greater or equal than 95.</li>
+</ul>
+<p>Putting all this together, and considering that the decision variables are nonnegative, the LP that maximizes profit is:</p>
+<p>MAX z = 20P1 + 60P2</p>
+<p>s.t.</p>
+<ul>
+<li>WH) 30P1 + 20P2 &lt;= 2700</li>
+<li>MH 5P1 + 10P2 &lt;= 850</li>
+<li>PM) P1 + P2 &gt;= 95</li>
+<li>P1 &gt;= 0, P2 &gt;= 0</li>
+</ul>
 <pre class="r"><code>#define parameters
 obj.fun = c(20,60)
 constr = matrix(c(30,20,5,10,1,1), ncol = 2, byrow = TRUE)
@@ -313,30 +384,62 @@ cat(paste(c(&#39;Objective Value: &#39;,prod.sol$objval,&#39;\nSolution:&#39;,pr
 </div>
 <div id="transportation" class="section level1">
 <h1>Transportation</h1>
+<p>Let’s consider a transportation problem of two origins a and b, and three destinations 1, 2 and 3.</p>
+<p>In Table below are presented the cost cij of transporting one unit from the origin i to destination j, and the maximal capacity of the origins and the required demand in the destinations.</p>
+<p>We need to know how we must cover the demand of the destinations at a minimal cost.</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="center">1</th>
+<th align="center">2</th>
+<th align="center">3</th>
+<th align="center">capacity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>a</strong></td>
+<td align="center">8</td>
+<td align="center">6</td>
+<td align="center">3</td>
+<td align="center">70</td>
+</tr>
+<tr class="even">
+<td><strong>b</strong></td>
+<td align="center">2</td>
+<td align="center">4</td>
+<td align="center">9</td>
+<td align="center">40</td>
+</tr>
+<tr class="odd">
+<td>demand</td>
+<td align="center">40</td>
+<td align="center">35</td>
+<td align="center">25</td>
+<td align="center"></td>
+</tr>
+</tbody>
+</table>
+<p>This situation can be modeled with a LP with the following elements:</p>
+<ul>
+<li>Decision variables of the form xij , representing units transported from origin i to destination j</li>
+<li>An objective function with cost coefficients equal to cij</li>
+<li>Two sets of constraints: a less or equal set of constraints for each origin, limiting the units to be transported, and a greater of equal set of constraints representing that the demand of each destination must be covered.</li>
+</ul>
+<p>The resulting LP is:</p>
+<p>MIN z = 8xa1 + 6xa2 + 3xa3 + 2xb1 + 4xb2 + 9xb3</p>
+<p>s.a.</p>
+<ul>
+<li>ca) xa1 + xa2 + xa3 &lt;= 70</li>
+<li>cb) xb1 + xb2 + xb3 &lt;= 40</li>
+<li>d1) xa1 + xb1 &gt;= 40</li>
+<li>d2) xa2 + xb2 &gt;= 35</li>
+<li>d3) xa3 + xb3 &gt;= 25</li>
+<li>xij &gt;= 0</li>
+</ul>
 <pre class="r"><code>lprec = make.lp(0,6)
 lp.control(lprec,sense=&quot;min&quot;)</code></pre>
-<p>$anti.degen [1] “fixedvars” “stalling”</p>
-<p>$basis.crash [1] “none”</p>
-<p>$bb.depthlimit [1] -50</p>
-<p>$bb.floorfirst [1] “automatic”</p>
-<p>$bb.rule [1] “pseudononint” “greedy” “dynamic” “rcostfixing”</p>
-<p>$break.at.first [1] FALSE</p>
-<p>$break.at.value [1] -1e+30</p>
-<p>$epsilon epsb epsd epsel epsint epsperturb epspivot 1e-10 1e-09 1e-12 1e-07 1e-05 2e-07</p>
-<p>$improve [1] “dualfeas” “thetagap”</p>
-<p>$infinite [1] 1e+30</p>
-<p>$maxpivot [1] 250</p>
-<p>$mip.gap absolute relative 1e-11 1e-11</p>
-<p>$negrange [1] -1e+06</p>
-<p>$obj.in.basis [1] TRUE</p>
-<p>$pivoting [1] “devex” “adaptive”</p>
-<p>$presolve [1] “none”</p>
-<p>$scalelimit [1] 5</p>
-<p>$scaling [1] “geometric” “equilibrate” “integers”</p>
-<p>$sense [1] “minimize”</p>
-<p>$simplextype [1] “dual” “primal”</p>
-<p>$timeout [1] 0</p>
-<p>$verbose [1] “neutral”</p>
 <pre class="r"><code>set.objfn(lprec, c(8,6,3,2,4,9))
 add.constraint(lprec,c(1,1,1,0,0,0),&quot;&lt;=&quot;,70)
 add.constraint(lprec,c(0,0,0,1,1,1),&quot;&lt;=&quot;,40)
@@ -346,78 +449,178 @@ add.constraint(lprec,c(0,0,1,0,0,1),&quot;&gt;=&quot;,20)
 
 solve(lprec)</code></pre>
 <p>[1] 0</p>
-<pre class="r"><code>get.objective(lprec)</code></pre>
-<p>[1] 350</p>
-<pre class="r"><code>get.variables(lprec)</code></pre>
-<p>[1] 0 35 20 40 0 0</p>
-<pre class="r"><code>get.dual.solution(lprec)</code></pre>
-<p>[1] 1 0 -2 4 6 3 4 0 0 0 0 8</p>
+<pre class="r"><code>cat(paste(c(&#39;Objective Value: &#39;,get.objective(lprec))))</code></pre>
+<p>Objective Value: 350</p>
+<pre class="r"><code>cat(paste(c(&#39;Variables: &#39;,get.variables(lprec))))</code></pre>
+<p>Variables: 0 35 20 40 0 0</p>
+<pre class="r"><code>cat(paste(c(&#39;Solution: &#39;,get.dual.solution(lprec))))</code></pre>
+<p>Solution: 1 0 -2 4 6 3 4 0 0 0 0 8</p>
 </div>
-<div id="section-1" class="section level1">
-<h1>9.3</h1>
-<pre class="r"><code>#define parameters
-obj.fun = c(0.95,1.15,-1,-1)
-constr = matrix(c(0.8,-0.2,0,0,
-                  0.4,-0.6,0,0,
-                  1.0,-3,0,0,
-                  0,1,0,-5,
-                  0.8,0.6,1,1), ncol = 4, byrow = TRUE)
-constr.dir = c(&quot;&gt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;)
-rhs = c(0,0,5000,4000,16000)
+<div id="coordinating-production-and-marketing" class="section level1">
+<h1>Coordinating Production and Marketing</h1>
+<p>The Andrews Apple Products Company purchases apples from local growers and makes applesauce and apple juice. It costs $0.80 to product a jar of applesauce and $0.60 to produce a bottle of apple juice. The company has a policy that at least 20% but no more than 60% of its output must be applesauce.</p>
+<p>The company wants to meet but not exceed the demand for each product. The marketing manager estimates that the demand for applesauce is a maximum of 5,000 jars, plus an additional 3 jars for each $1 spent on advertising for applesauce. The maximum demand for apple juice is estimated to be 4,000 bottles, plus and additional 5 bottles for every $1 spent on advertising for apple juice. The company has $16,000 to spend on producing and advertising its two products. Applesauce sells for $1.75 per jar; apple juice sells for $1.75 per bottle. The company wants to know how many units of each product to produce, and how much advertising to spend on each product, in order to maximize profit.</p>
+<pre class="r"><code>lprec = make.lp(0,4)
+lp.control(lprec,sense=&quot;max&quot;)</code></pre>
+<pre class="r"><code>set.objfn(lprec, c(0.95,1.15,-1,-1))
+add.constraint(lprec,c(0.8,-0.2,0,0),&quot;&gt;=&quot;,0)
+add.constraint(lprec,c(0.4,-0.6,0,0),&quot;&lt;=&quot;,0)
+add.constraint(lprec,c(1,-3,0,0),&quot;&lt;=&quot;,5000)
+add.constraint(lprec,c(0,1,0,-5),&quot;&lt;=&quot;,4000)
+add.constraint(lprec,c(0.8,0.6,1,1),&quot;&lt;=&quot;,16000)
 
-#solve the problem
-prod.sol = lp(&quot;max&quot;,obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
-
-#optimal solution
-cat(paste(c(&#39;Objective Value: &#39;,prod.sol$objval,&#39;\nSolution:&#39;,prod.sol$solution,&#39;\nDuals:&#39;,prod.sol$duals)))</code></pre>
-<p>Objective Value: 20750 Solution: 4200 16800 0 2560 Duals: 0 0 0 0.4375 1.1875 0 0 -2.1875 0</p>
+solve(lprec)</code></pre>
+<p>[1] 0</p>
+<pre class="r"><code>cat(paste(c(&#39;Objective Value: &#39;,get.objective(lprec))))</code></pre>
+<p>Objective Value: 20750</p>
+<pre class="r"><code>cat(paste(c(&#39;Variables: &#39;,get.variables(lprec))))</code></pre>
+<p>Variables: 4200 16800 0 2560</p>
+<pre class="r"><code>cat(paste(c(&#39;Solution: &#39;,get.dual.solution(lprec))))</code></pre>
+<p>Solution: 1 0 0 0 0.4375 1.1875 0 0 -2.1875 0</p>
 </div>
-<div id="section-2" class="section level1">
-<h1>9.7</h1>
-<pre class="r"><code>#define parameters
-obj.fun = c(10.7,12,8,6.5)
-constr = matrix(c(1,0,1,0,
-                  0,1,0,1,
-                  0.15,0.1,0,0,
-                  0.2,0.2,0,0,
-                  0.1,0.15,0,0,
-                  0,0,1,1), ncol = 4, byrow = TRUE)
-constr.dir = c(&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;,&quot;&lt;=&quot;)
-rhs = c(20000,10000,2000,4200,2500,20000)
+<div id="make-or-buy" class="section level1">
+<h1>Make or Buy</h1>
+<p>A sudden increase in the demand for smoke detectors has left Acme Alarms with insufficient capacity to meet demand. The company has seen monthly demand from its retailers for its electronic and battery-operated detectors rise to 20,000 and 10,000, respectively. Acme’s production process involves three departments: fabrication, assembly, and shipping. The relevant quantitative data on production and prices are summarized as follows:</p>
+<table>
+<colgroup>
+<col width="21%" />
+<col width="27%" />
+<col width="27%" />
+<col width="23%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">Department</th>
+<th align="center">Monthly Hours Available</th>
+<th align="center">Hours/Unit (Electronic)</th>
+<th align="center">Hours/Unit (Battery)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>Fabrication</strong></td>
+<td align="center">2000</td>
+<td align="center">0.15</td>
+<td align="center">0.10</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>Assembly</strong></td>
+<td align="center">4200</td>
+<td align="center">0.20</td>
+<td align="center">0.20</td>
+</tr>
+<tr class="odd">
+<td align="center"><strong>Shipping</strong></td>
+<td align="center">2500</td>
+<td align="center">0.10</td>
+<td align="center">0.15</td>
+</tr>
+<tr class="even">
+<td align="center">Variable Cost/Unit</td>
+<td align="center"></td>
+<td align="center">18.80</td>
+<td align="center">16.00</td>
+</tr>
+<tr class="odd">
+<td align="center">Retail Price</td>
+<td align="center"></td>
+<td align="center">29.50</td>
+<td align="center">28.00</td>
+</tr>
+</tbody>
+</table>
+<p>The company also has the option to obtain additional units from a subcontractor, who has offered to supply up to 20,000 units per month in any combination of electric and battery-operated models, at a charge of $21.50 per unit. For this price, the subcontractor will test and ship its models directly to the retailers without using Acme’s production process</p>
+<pre class="r"><code>lprec = make.lp(0,4)
+lp.control(lprec,sense=&quot;max&quot;)</code></pre>
+<pre class="r"><code>set.objfn(lprec, c(10.7,12,8,6.5))
+add.constraint(lprec,c(1,0,1,0),&quot;&lt;=&quot;,20000)
+add.constraint(lprec,c(0,1,0,1),&quot;&lt;=&quot;,10000)
+add.constraint(lprec,c(0.15,0.1,0,0),&quot;&lt;=&quot;,2000)
+add.constraint(lprec,c(0.2,0.2,0,0),&quot;&lt;=&quot;,4200)
+add.constraint(lprec,c(0.1,0.15,0,0),&quot;&lt;=&quot;,2500)
+add.constraint(lprec,c(0,0,1,1),&quot;&lt;=&quot;,20000)
 
-#solve the problem
-prod.sol = lp(&quot;max&quot;,obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
-
-#optimal solution
-cat(paste(c(&#39;Objective Value: &#39;,prod.sol$objval,&#39;\nSolution:&#39;,prod.sol$solution,&#39;\nDuals:&#39;,prod.sol$duals)))</code></pre>
-<p>Objective Value: 298000 Solution: 6666.66666666667 10000 13333.3333333333 0 Duals: 8 10.2 18 0 0 0 0 0 0 -3.7</p>
+solve(lprec)</code></pre>
+<p>[1] 0</p>
+<pre class="r"><code>cat(paste(c(&#39;Objective Value: &#39;,get.objective(lprec))))</code></pre>
+<p>Objective Value: 298000</p>
+<pre class="r"><code>cat(paste(c(&#39;Variables: &#39;,get.variables(lprec))))</code></pre>
+<p>Variables: 6666.66666666667 10000 13333.3333333333 0</p>
+<pre class="r"><code>cat(paste(c(&#39;Solution: &#39;,get.dual.solution(lprec))))</code></pre>
+<p>Solution: 1 8 10.2 18 0 0 0 0 0 0 -3.7</p>
 </div>
-<div id="section-3" class="section level1">
-<h1>9.10</h1>
+<div id="coffee-blending-and-sales" class="section level1">
+<h1>Coffee Blending and Sales</h1>
+<p>Hill-O-Beans Coffee Company blends four component beans into three final blends of coffee:</p>
+<p>One is sold to luxury hotels, another to restaurants, and the third to supermarkets for store label brands.</p>
+<p>The company has four reliable bean supplies:</p>
+<p>Robusta, Javan Arabica, Liberica, and Brazilian Arabica.</p>
+<p>The following table summarizes the very precise recipes for the final coffee blends, the cost and availability information for the four components, and the wholesale price per pound of the final blends. The percentages indicate the fraction of each component to be used in each blend.</p>
+<table>
+<colgroup>
+<col width="26%" />
+<col width="6%" />
+<col width="11%" />
+<col width="7%" />
+<col width="15%" />
+<col width="30%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">Component</th>
+<th align="center">Hotel</th>
+<th align="center">Restaurant</th>
+<th align="center">Market</th>
+<th align="center">Cost per Pound</th>
+<th align="center">Max Weekly Availability (lbs)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>Robusta</strong></td>
+<td align="center">20%</td>
+<td align="center">35%</td>
+<td align="center">10%</td>
+<td align="center">$0.60</td>
+<td align="center">40,000</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>Javan Arabica</strong></td>
+<td align="center">40%</td>
+<td align="center">15%</td>
+<td align="center">35%</td>
+<td align="center">$0.80</td>
+<td align="center">25,000</td>
+</tr>
+<tr class="odd">
+<td align="center"><strong>Liberica</strong></td>
+<td align="center">15%</td>
+<td align="center">20%</td>
+<td align="center">40%</td>
+<td align="center">$0.55</td>
+<td align="center">20,000</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>Brazilian Arabica</strong></td>
+<td align="center">25%</td>
+<td align="center">30%</td>
+<td align="center">15%</td>
+<td align="center">$0.70</td>
+<td align="center">45,000</td>
+</tr>
+<tr class="odd">
+<td align="center">Wholesale Price Per Pound</td>
+<td align="center">$1.25</td>
+<td align="center">$1.50</td>
+<td align="center">$1.40</td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+</tbody>
+</table>
+<p>The processor’s plant can handle no more than 100,000 pounds per week, but there is virtually unlimited demand for the final blends. However, the marketing department requires minimum production levels of 10,000, 25,000 and 30,000 pounds respectively, for the hotel, restaurant, and market blends.</p>
 <pre class="r"><code>lprec = make.lp(0,3)
 lp.control(lprec,sense=&quot;max&quot;)</code></pre>
-<p>$anti.degen [1] “fixedvars” “stalling”</p>
-<p>$basis.crash [1] “none”</p>
-<p>$bb.depthlimit [1] -50</p>
-<p>$bb.floorfirst [1] “automatic”</p>
-<p>$bb.rule [1] “pseudononint” “greedy” “dynamic” “rcostfixing”</p>
-<p>$break.at.first [1] FALSE</p>
-<p>$break.at.value [1] 1e+30</p>
-<p>$epsilon epsb epsd epsel epsint epsperturb epspivot 1e-10 1e-09 1e-12 1e-07 1e-05 2e-07</p>
-<p>$improve [1] “dualfeas” “thetagap”</p>
-<p>$infinite [1] 1e+30</p>
-<p>$maxpivot [1] 250</p>
-<p>$mip.gap absolute relative 1e-11 1e-11</p>
-<p>$negrange [1] -1e+06</p>
-<p>$obj.in.basis [1] TRUE</p>
-<p>$pivoting [1] “devex” “adaptive”</p>
-<p>$presolve [1] “none”</p>
-<p>$scalelimit [1] 5</p>
-<p>$scaling [1] “geometric” “equilibrate” “integers”</p>
-<p>$sense [1] “maximize”</p>
-<p>$simplextype [1] “dual” “primal”</p>
-<p>$timeout [1] 0</p>
-<p>$verbose [1] “neutral”</p>
 <pre class="r"><code>set.objfn(lprec, c(0.5525,0.85,0.735))
 add.constraint(lprec,c(0.2,0.35,0.1),&quot;&lt;=&quot;,40000)
 add.constraint(lprec,c(0.4,0.15,0.35),&quot;&lt;=&quot;,25000)
@@ -430,12 +633,345 @@ add.constraint(lprec,c(0,0,1),&quot;&lt;=&quot;,30000)
 
 solve(lprec)</code></pre>
 <p>[1] 0</p>
-<pre class="r"><code>get.objective(lprec)</code></pre>
-<p>[1] 48825</p>
-<pre class="r"><code>get.variables(lprec)</code></pre>
-<p>[1] 10000 25000 30000</p>
-<pre class="r"><code>get.dual.solution(lprec)</code></pre>
-<p>[1] 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.5525 0.8500 0.7350 0.0000 [11] 0.0000 0.0000</p>
+<pre class="r"><code>cat(paste(c(&#39;Objective Value: &#39;,get.objective(lprec))))</code></pre>
+<p>Objective Value: 48825</p>
+<pre class="r"><code>cat(paste(c(&#39;Variables: &#39;,get.variables(lprec))))</code></pre>
+<p>Variables: 10000 25000 30000</p>
+<pre class="r"><code>cat(paste(c(&#39;Solution: &#39;,get.dual.solution(lprec))))</code></pre>
+<p>Solution: 1 0 0 0 0 0 0.5525 0.85 0.735 0 0 0</p>
+</div>
+<div id="q11.1" class="section level1">
+<h1>Q11.1</h1>
+<pre class="r"><code>library(lpSolveAPI)
+DataForModel &lt;- read.table(
+  &quot;Week5_Q11_1.csv&quot;, 
+  sep=&quot;,&quot;, header=TRUE)
+
+NoOfConstraints &lt;- ncol(DataForModel)-2
+NoOfVariables &lt;-nrow(DataForModel)-1
+
+# We create a new empty model with NoOfConstraints rows and NoOfVariables columns
+lpModel &lt;-make.lp(NoOfConstraints,NoOfVariables)
+
+#Name the model variables
+VariableNames &lt;- t(DataForModel[1:NoOfVariables,1])
+#Name the constraints
+ConstraintNames &lt;- colnames(DataForModel[3:(NoOfConstraints+2)])
+
+# maximize the profit 
+lp.control(lpModel, sense=&quot;max&quot;)</code></pre>
+<pre><code>## $anti.degen
+## [1] &quot;fixedvars&quot; &quot;stalling&quot; 
+## 
+## $basis.crash
+## [1] &quot;none&quot;
+## 
+## $bb.depthlimit
+## [1] -50
+## 
+## $bb.floorfirst
+## [1] &quot;automatic&quot;
+## 
+## $bb.rule
+## [1] &quot;pseudononint&quot; &quot;greedy&quot;       &quot;dynamic&quot;      &quot;rcostfixing&quot; 
+## 
+## $break.at.first
+## [1] FALSE
+## 
+## $break.at.value
+## [1] 1e+30
+## 
+## $epsilon
+##       epsb       epsd      epsel     epsint epsperturb   epspivot 
+##      1e-10      1e-09      1e-12      1e-07      1e-05      2e-07 
+## 
+## $improve
+## [1] &quot;dualfeas&quot; &quot;thetagap&quot;
+## 
+## $infinite
+## [1] 1e+30
+## 
+## $maxpivot
+## [1] 250
+## 
+## $mip.gap
+## absolute relative 
+##    1e-11    1e-11 
+## 
+## $negrange
+## [1] -1e+06
+## 
+## $obj.in.basis
+## [1] TRUE
+## 
+## $pivoting
+## [1] &quot;devex&quot;    &quot;adaptive&quot;
+## 
+## $presolve
+## [1] &quot;none&quot;
+## 
+## $scalelimit
+## [1] 5
+## 
+## $scaling
+## [1] &quot;geometric&quot;   &quot;equilibrate&quot; &quot;integers&quot;   
+## 
+## $sense
+## [1] &quot;maximize&quot;
+## 
+## $simplextype
+## [1] &quot;dual&quot;   &quot;primal&quot;
+## 
+## $timeout
+## [1] 0
+## 
+## $verbose
+## [1] &quot;neutral&quot;</code></pre>
+<pre class="r"><code># Setting all variable types to be binary
+for(i in 1:NoOfVariables){ 
+  set.type(lpModel,i,&quot;binary&quot;)
+} 
+
+# Setting the appropriate data for each project, that translates to a column in the lpSolve equation
+for(i in 1:NoOfVariables){ 
+  set.column(lpModel, i, DataForModel[i,3:(NoOfConstraints+2)])
+} 
+# Each constraint provides the upper bound of rhs
+#set.constr.type(lpmodel,rep(&quot;&lt;=&quot;, NoOfConstraints)) -&gt; Use this if all your constraints are of the same inequality type
+set.constr.type(lpModel, c(&quot;&lt;=&quot;, &quot;&lt;=&quot;, &quot;&lt;=&quot;, &quot;&gt;=&quot;))
+
+# Set the RHS values
+set.rhs(lpModel, DataForModel[(NoOfVariables+1),3:(NoOfConstraints+2)])
+
+#Check the model
+dimnames(lpModel) &lt;- list(ConstraintNames, VariableNames)
+
+#Objective
+obj.profit &lt;- DataForModel[1:NoOfVariables,2]
+set.objfn(lpModel, obj.profit)
+
+#Check the model
+lpModel</code></pre>
+<pre><code>## Model name: 
+##              x1   x2   x3   x4   x5   x6   x7   x8         
+## Maximize     36   82   29   16   56   61   48   41         
+## Expense      60  110   53   47   92   85   73   65  &lt;=  300
+## Scientists    7    9    8    4    7    6    8    5  &lt;=   40
+## p2_p5         0    1    0    0    1    0    0    0  &lt;=    1
+## p5_8          0    0    0    0    1    1    1    1  &gt;=    2
+## Kind        Std  Std  Std  Std  Std  Std  Std  Std         
+## Type        Int  Int  Int  Int  Int  Int  Int  Int         
+## Upper         1    1    1    1    1    1    1    1         
+## Lower         0    0    0    0    0    0    0    0</code></pre>
+<pre class="r"><code># In order to be able to visually check the model, you can write the model to a text file 
+write.lp(lpModel,&#39;modelQ11_1.lp&#39;,type=&#39;lp&#39;)
+
+# Solving the model
+solve(lpModel) </code></pre>
+<pre><code>## [1] 0</code></pre>
+<pre class="r"><code>#get the solution 
+get.objective(lpModel)</code></pre>
+<pre><code>## [1] 191</code></pre>
+<pre class="r"><code>get.variables(lpModel)</code></pre>
+<pre><code>## [1] 0 1 0 0 0 1 1 0</code></pre>
+</div>
+<div id="q11.1-1" class="section level1">
+<h1>Q11.1</h1>
+<pre class="r"><code>library(lpSolveAPI)
+DataForModel &lt;- read.table(
+  &quot;Week5_ICA_Q1.csv&quot;, 
+  sep=&quot;;&quot;, header=TRUE)
+
+NoOfConstraints &lt;- ncol(DataForModel)-2
+NoOfVariables &lt;-nrow(DataForModel)-1
+
+# We create a new empty model with NoOfConstraints rows and NoOfVariables columns
+lpModel &lt;-make.lp(NoOfConstraints,NoOfVariables)
+
+#Name the model variables
+VariableNames &lt;- t(DataForModel[1:NoOfVariables,1])
+#Name the constraints
+ConstraintNames &lt;- colnames(DataForModel[3:(NoOfConstraints+2)])
+
+# maximize the profit 
+lp.control(lpModel, sense=&quot;min&quot;)</code></pre>
+<pre><code>## $anti.degen
+## [1] &quot;fixedvars&quot; &quot;stalling&quot; 
+## 
+## $basis.crash
+## [1] &quot;none&quot;
+## 
+## $bb.depthlimit
+## [1] -50
+## 
+## $bb.floorfirst
+## [1] &quot;automatic&quot;
+## 
+## $bb.rule
+## [1] &quot;pseudononint&quot; &quot;greedy&quot;       &quot;dynamic&quot;      &quot;rcostfixing&quot; 
+## 
+## $break.at.first
+## [1] FALSE
+## 
+## $break.at.value
+## [1] -1e+30
+## 
+## $epsilon
+##       epsb       epsd      epsel     epsint epsperturb   epspivot 
+##      1e-10      1e-09      1e-12      1e-07      1e-05      2e-07 
+## 
+## $improve
+## [1] &quot;dualfeas&quot; &quot;thetagap&quot;
+## 
+## $infinite
+## [1] 1e+30
+## 
+## $maxpivot
+## [1] 250
+## 
+## $mip.gap
+## absolute relative 
+##    1e-11    1e-11 
+## 
+## $negrange
+## [1] -1e+06
+## 
+## $obj.in.basis
+## [1] TRUE
+## 
+## $pivoting
+## [1] &quot;devex&quot;    &quot;adaptive&quot;
+## 
+## $presolve
+## [1] &quot;none&quot;
+## 
+## $scalelimit
+## [1] 5
+## 
+## $scaling
+## [1] &quot;geometric&quot;   &quot;equilibrate&quot; &quot;integers&quot;   
+## 
+## $sense
+## [1] &quot;minimize&quot;
+## 
+## $simplextype
+## [1] &quot;dual&quot;   &quot;primal&quot;
+## 
+## $timeout
+## [1] 0
+## 
+## $verbose
+## [1] &quot;neutral&quot;</code></pre>
+<pre class="r"><code># Setting all variable types to be binary
+for(i in 1:4){ 
+  set.type(lpModel,i,&quot;binary&quot;)
+} 
+
+# Setting the appropriate data for each project, that translates to a column in the lpSolve equation
+for(i in 1:NoOfVariables){ 
+  set.column(lpModel, i, DataForModel[i,3:(NoOfConstraints+2)])
+} 
+# Each constraint provides the upper bound of rhs
+#set.constr.type(lpmodel,rep(&quot;&lt;=&quot;, NoOfConstraints)) -&gt; Use this if all your constraints are of the same inequality type
+set.constr.type(lpModel, c(&quot;&gt;=&quot;, &quot;&gt;=&quot;, &quot;&gt;=&quot;, &quot;&lt;=&quot;, &quot;&lt;=&quot;, &quot;&lt;=&quot;, &quot;&lt;=&quot;, &quot;&lt;=&quot;, &quot;&lt;=&quot;, &quot;&gt;=&quot;))
+
+# Set the RHS values
+set.rhs(lpModel, DataForModel[(NoOfVariables+1),3:(NoOfConstraints+2)])
+
+#Check the model
+dimnames(lpModel) &lt;- list(ConstraintNames, VariableNames)
+
+#Objective
+obj.profit &lt;- DataForModel[1:NoOfVariables,2]
+set.objfn(lpModel, obj.profit)
+
+#Check the model
+lpModel</code></pre>
+<pre><code>## Model name: 
+##   a linear program with 16 decision variables and 10 constraints</code></pre>
+<pre class="r"><code># In order to be able to visually check the model, you can write the model to a text file 
+write.lp(lpModel,&#39;modelICA_Q1.lp&#39;,type=&#39;lp&#39;)
+
+# Solving the model
+solve(lpModel) </code></pre>
+<pre><code>## [1] 0</code></pre>
+<pre class="r"><code>#get the solution 
+get.objective(lpModel)</code></pre>
+<pre><code>## [1] 4750</code></pre>
+<pre class="r"><code>get.variables(lpModel)</code></pre>
+<pre><code>##  [1]  0  1  0  1  0  0  0  0 70 30  0  0  0 80  0 10</code></pre>
+</div>
+<div id="research-and-development-planning-simulation" class="section level1">
+<h1>Research and Development Planning Simulation</h1>
+<p>A firm is in the process of assessing the economic prospects for a new bottling machine it is developing. Future research and development expenses could range from $4 to $9 million, with a most likely value around $7 million. The life of the product will be anywhere from 3 to 10 years. Yearly unit sales will range from 100 to 500, with a most likely value around 300. The machines will sell for between $20,000 and $25,000 each. The production cost of the machine is expected to be $13,000 but could be as low as $11,000 or as high as $15,000. The firm’s discount rate is 10%.</p>
+<ul>
+<li>What is the expected NPV for this new machine over ten years?</li>
+<li>What is the probablity of a positive NPV?</li>
+</ul>
+<pre class="r"><code>NPV &lt;- NULL
+
+for(j in 1:10000) { 
+#Variables
+RDCost &lt;- rtriangle(n=1, 4000, 9000, 7000)
+ProdCost &lt;- rtriangle(n=1, 11, 15, 13)
+Price &lt;- runif(n=1, min=20, max=25)
+Sales &lt;- rtriangle(n=1, 100, 500, 300)
+Life &lt;- sample(3:10, 1)
+# Life &lt;- sample(x = c(3, 4, 5, 6, 7, 8, 9, 10), size=1, prob=(1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8), replace=T)  
+DiscountRate &lt;- 0.1
+DiscountedValue &lt;- RDCost * (-1)
+NPV_sub &lt;- 0
+
+
+for(i in 1:Life) { 
+
+  DiscountedValue = DiscountedValue + ((Price - ProdCost) * Sales) / ((1 + DiscountRate)**i)
+  NPV_sub = NPV_sub + DiscountedValue
+  DiscountedValue &lt;- 0
+  
+}
+
+NPV[j] &lt;- NPV_sub 
+
+}
+
+hist(NPV)</code></pre>
+<p><img src="data:image/png;base64,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" width="672" /></p>
+<pre class="r"><code>kable(as.array(summary(NPV)))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Var1</th>
+<th align="right">Freq</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Min.</td>
+<td align="right">-6062.516</td>
+</tr>
+<tr class="even">
+<td align="left">1st Qu.</td>
+<td align="right">1920.651</td>
+</tr>
+<tr class="odd">
+<td align="left">Median</td>
+<td align="right">5363.268</td>
+</tr>
+<tr class="even">
+<td align="left">Mean</td>
+<td align="right">6108.027</td>
+</tr>
+<tr class="odd">
+<td align="left">3rd Qu.</td>
+<td align="right">9596.792</td>
+</tr>
+<tr class="even">
+<td align="left">Max.</td>
+<td align="right">30854.716</td>
+</tr>
+</tbody>
+</table>
 </div>
 
 

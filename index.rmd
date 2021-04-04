@@ -14,25 +14,91 @@ output:
 ```{r setup, include=FALSE}
 library(lpSolve)
 library(lpSolveAPI)
-Sys.setenv(LANGUAGE='en') 
+library(triangle)
+library(knitr)
+Sys.setenv(LANGUAGE='en')
+
 ```
 
-# 9.1
+# Production Planning 
+
+The Bogard Corporation produces three types of bookcases, which it sells to large office supply companies. The production of each bookcase requires two machine operations, trimming and shaping, followed by assembly, which includes inspection and packaging. All three types require 0.4 hours of assebly time, but the machining operations have different processing times, as shown in the following table, in hours per unit:
+
+|             | Standart | Narrow | Wide |
+|-------------|:--------:|:------:|:----:|
+| **Trimmer** | 0.2      | 0.4    | 0.6  |
+|  **Shaper** | 0.6      | 0.2    | 0.5  |
+
+Each machine is available 150 hours per month, and the current size of the assembly department provides capacity of 600 hours. Each bookcase produced yields a unit profit contribution as follows:
+
+|            	| Standart 	| Narrow 	| Wide 	|
+|------------	|:--------:	|:------:	|:----:	|
+| **Profit** 	| 8        	| 6      	| 10   	|
+
+```{r, results=FALSE}
+lprec = make.lp(0,3)
+lp.control(lprec,sense="max")
+```
 ```{r, results='asis'}
-#define parameters
-obj.fun = c(8,6,10)
-constr = matrix(c(0.2,0.4,0.6,0.6,0.2,0.5,0.4,0.4,0.4), ncol = 3, byrow = TRUE)
-constr.dir = c("<=","<=","<=")
-rhs = c(150,150,600)
+set.objfn(lprec, c(8,6,10))
+add.constraint(lprec,c(0.2,0.4,0.6),"<=",150)
+add.constraint(lprec,c(0.6,0.2,0.5),"<=",150)
+add.constraint(lprec,c(0.4,0.4,0.4),"<=",600)
 
-#solve the problem
-prod.sol = lp("max",obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
-
-#optimal solution
-cat(paste(c('Objective Value: ',prod.sol$objval,'\nSolution:',prod.sol$solution,'\nDuals:',prod.sol$duals)))
+solve(lprec)
+cat(paste(c('Objective Value: ',get.objective(lprec))))
+cat(paste(c('Variables: ',get.variables(lprec))))
+cat(paste(c('Solution: ',get.dual.solution(lprec))))
 ```
 
 # PL Model
+Let’s consider the following situation:
+
+A small business sells two products, named Product 1 and Product 2.
+Each tonne of Product 1 consumes 30 working hours, and each tonne of
+Product 2 consumes 20 working hours. The business has a maximum of
+2,700 working hours for the period considered. As for machine hours,
+each tonne of Products 1 and 2 consumes 5 and 10 machine hours,
+respectively. There are 850 machine hours available.
+
+Each tonne of Product 1 yields 20 Me of profit, while Product 2 yields
+60 Me for each tonne sold. For technical reasons, the firm must produce
+a minimum of 95 tonnes in total between both products. We need
+to know how many tonnes of Product 1 and 2 must be produced to
+maximize total profit.
+
+This situation is apt to be modeled as a PL model. First, we need to
+define the decision variables. In this case we have:
+
+* P1 number of tonnes produced and sold of Product 1
+* P2 number of tonnes produced and sold of Product 2
+
+The cost coefficients of these variables are 20 and 60, respectively. Therefore,
+the objective function is defined multiplying each variable by its
+corresponding cost coefficient.
+
+The constraints of this LP are:
+
+* A constraint WH making that the total amount of working hours
+used in Product 1 and Product 2, which equals 30P1 + 20P2, is
+less or equal than 2,700 hours.
+* A similar constraint MH making that the total machine hours
+5P1 + 10P2 are less or equal than 850.
+* A PM constraint making that the total units produced and sold
+P1 + P2 are greater or equal than 95.
+
+Putting all this together, and considering that the decision variables are
+nonnegative, the LP that maximizes profit is:
+
+MAX z = 20P1 + 60P2
+
+s.t. 
+
+* WH) 30P1 + 20P2 <= 2700
+* MH 5P1 + 10P2 <= 850
+* PM) P1 + P2 >= 95
+* P1 >= 0, P2 >= 0
+
 ```{r, results='asis'}
 #define parameters
 obj.fun = c(20,60)
@@ -48,9 +114,51 @@ cat(paste(c('Objective Value: ',prod.sol$objval,'\nSolution:',prod.sol$solution,
 ```
 
 # Transportation
-```{r, results='asis'}
+
+Let’s consider a transportation problem of two origins a and b, and three
+destinations 1, 2 and 3. 
+
+In Table below are presented the cost cij of transporting
+one unit from the origin i to destination j, and the maximal
+capacity of the origins and the required demand in the destinations.
+
+We need to know how we must cover the demand of the destinations at
+a minimal cost.
+
+|        	|  1 	|  2 	|  3 	| capacity 	|
+|--------	|:--:	|:--:	|:--:	|:--------:	|
+|  **a** 	| 8  	| 6  	| 3  	| 70       	|
+|  **b** 	| 2  	| 4  	| 9  	| 40       	|
+| demand 	| 40 	| 35 	| 25 	|          	|
+
+This situation can be modeled with a LP with the following elements:
+
+* Decision variables of the form xij , representing units transported
+from origin i to destination j
+* An objective function with cost coefficients equal to cij
+* Two sets of constraints: a less or equal set of constraints for each
+origin, limiting the units to be transported, and a greater of equal
+set of constraints representing that the demand of each destination
+must be covered.
+
+The resulting LP is:
+
+MIN z = 8xa1 + 6xa2 + 3xa3 + 2xb1 + 4xb2 + 9xb3
+
+s.a. 
+
+ * ca) xa1 + xa2 + xa3 <= 70
+ * cb) xb1 + xb2 + xb3 <= 40
+ * d1) xa1 + xb1 >= 40
+ * d2) xa2 + xb2 >= 35
+ * d3) xa3 + xb3 >= 25
+ * xij >= 0
+
+```{r, results=FALSE}
 lprec = make.lp(0,6)
 lp.control(lprec,sense="min")
+```
+```{r, results='asis'}
 set.objfn(lprec, c(8,6,3,2,4,9))
 add.constraint(lprec,c(1,1,1,0,0,0),"<=",70)
 add.constraint(lprec,c(0,0,0,1,1,1),"<=",40)
@@ -59,54 +167,95 @@ add.constraint(lprec,c(0,1,0,0,1,0),">=",35)
 add.constraint(lprec,c(0,0,1,0,0,1),">=",20)
 
 solve(lprec)
-get.objective(lprec)
-get.variables(lprec)
-get.dual.solution(lprec)
+cat(paste(c('Objective Value: ',get.objective(lprec))))
+cat(paste(c('Variables: ',get.variables(lprec))))
+cat(paste(c('Solution: ',get.dual.solution(lprec))))
 ```
 
-# 9.3
+# Coordinating Production and Marketing
+
+The Andrews Apple Products Company purchases apples from local growers and makes applesauce and apple juice. It costs \$0.80 to product a jar of applesauce and \$0.60 to produce a bottle of apple juice. The company has a policy that at least 20% but no more than 60% of its output must be applesauce.
+
+The company wants to meet but not exceed the demand for each product. The marketing manager estimates that the demand for applesauce is a maximum of 5,000 jars, plus an additional 3 jars for each \$1 spent on advertising for applesauce. The maximum demand for apple juice is estimated to be 4,000 bottles, plus and additional 5 bottles for every \$1 spent on advertising for apple juice. The company has \$16,000 to spend on producing and advertising its two products. Applesauce sells for \$1.75 per jar; apple juice sells for \$1.75 per bottle. The company wants to know how many units of each product to produce, and how much advertising to spend on each product, in order to maximize profit.
+
+```{r, results=FALSE}
+lprec = make.lp(0,4)
+lp.control(lprec,sense="max")
+```
 ```{r, results='asis'}
-#define parameters
-obj.fun = c(0.95,1.15,-1,-1)
-constr = matrix(c(0.8,-0.2,0,0,
-                  0.4,-0.6,0,0,
-                  1.0,-3,0,0,
-                  0,1,0,-5,
-                  0.8,0.6,1,1), ncol = 4, byrow = TRUE)
-constr.dir = c(">=","<=","<=","<=","<=")
-rhs = c(0,0,5000,4000,16000)
+set.objfn(lprec, c(0.95,1.15,-1,-1))
+add.constraint(lprec,c(0.8,-0.2,0,0),">=",0)
+add.constraint(lprec,c(0.4,-0.6,0,0),"<=",0)
+add.constraint(lprec,c(1,-3,0,0),"<=",5000)
+add.constraint(lprec,c(0,1,0,-5),"<=",4000)
+add.constraint(lprec,c(0.8,0.6,1,1),"<=",16000)
 
-#solve the problem
-prod.sol = lp("max",obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
-
-#optimal solution
-cat(paste(c('Objective Value: ',prod.sol$objval,'\nSolution:',prod.sol$solution,'\nDuals:',prod.sol$duals)))
+solve(lprec)
+cat(paste(c('Objective Value: ',get.objective(lprec))))
+cat(paste(c('Variables: ',get.variables(lprec))))
+cat(paste(c('Solution: ',get.dual.solution(lprec))))
 ```
 
-# 9.7
+# Make or Buy
+
+A sudden increase in the demand for smoke detectors has left Acme Alarms with insufficient capacity to meet demand. The company has seen monthly demand from its retailers for its electronic and battery-operated detectors rise to 20,000 and 10,000, respectively. Acme's production process involves three departments: fabrication, assembly, and shipping. The relevant quantitative data on production and prices are summarized as follows:
+
+|     Department     	| Monthly Hours Available 	| Hours/Unit (Electronic) 	| Hours/Unit (Battery) 	|
+|:------------------:	|:-----------------------:	|:-----------------------:	|:--------------------:	|
+|   **Fabrication**  	| 2000                    	| 0.15                    	| 0.10                 	|
+|    **Assembly**    	| 4200                    	| 0.20                    	| 0.20                 	|
+|    **Shipping**    	| 2500                    	| 0.10                    	| 0.15                 	|
+| Variable Cost/Unit 	|                         	| 18.80                   	| 16.00                	|
+|    Retail Price    	|                         	| 29.50                   	| 28.00                	|
+
+The company also has the option to obtain additional units from a subcontractor, who has offered to supply up to 20,000 units per month in any combination of electric and battery-operated models, at a charge of \$21.50 per unit. For this price, the subcontractor will test and ship its models directly to the retailers without using Acme's production process
+
+```{r, results=FALSE}
+lprec = make.lp(0,4)
+lp.control(lprec,sense="max")
+```
 ```{r, results='asis'}
-#define parameters
-obj.fun = c(10.7,12,8,6.5)
-constr = matrix(c(1,0,1,0,
-                  0,1,0,1,
-                  0.15,0.1,0,0,
-                  0.2,0.2,0,0,
-                  0.1,0.15,0,0,
-                  0,0,1,1), ncol = 4, byrow = TRUE)
-constr.dir = c("<=","<=","<=","<=","<=","<=")
-rhs = c(20000,10000,2000,4200,2500,20000)
+set.objfn(lprec, c(10.7,12,8,6.5))
+add.constraint(lprec,c(1,0,1,0),"<=",20000)
+add.constraint(lprec,c(0,1,0,1),"<=",10000)
+add.constraint(lprec,c(0.15,0.1,0,0),"<=",2000)
+add.constraint(lprec,c(0.2,0.2,0,0),"<=",4200)
+add.constraint(lprec,c(0.1,0.15,0,0),"<=",2500)
+add.constraint(lprec,c(0,0,1,1),"<=",20000)
 
-#solve the problem
-prod.sol = lp("max",obj.fun,constr,constr.dir,rhs,compute.sen=TRUE)
-
-#optimal solution
-cat(paste(c('Objective Value: ',prod.sol$objval,'\nSolution:',prod.sol$solution,'\nDuals:',prod.sol$duals)))
+solve(lprec)
+cat(paste(c('Objective Value: ',get.objective(lprec))))
+cat(paste(c('Variables: ',get.variables(lprec))))
+cat(paste(c('Solution: ',get.dual.solution(lprec))))
 ```
 
-# 9.10
-```{r, results='asis'}
+# Coffee Blending and Sales
+
+Hill-O-Beans Coffee Company blends four component beans into three final blends of coffee:
+
+One is sold to luxury hotels, another to restaurants, and the third to supermarkets for store label brands. 
+
+The company has four reliable bean supplies:
+
+Robusta, Javan Arabica, Liberica, and Brazilian Arabica.
+
+The following table summarizes the very precise recipes for the final coffee blends, the cost and availability information for the four components, and the wholesale price per pound of the final blends. The percentages indicate the fraction of each component to be used in each blend.
+
+|         Component         	| Hotel 	| Restaurant 	| Market 	| Cost per Pound 	| Max Weekly Availability (lbs) 	|
+|:-------------------------:	|:-----:	|:----------:	|:------:	|:--------------:	|:-----------------------------:	|
+|        **Robusta**        	| 20%   	| 35%        	| 10%    	| $0.60          	| 40,000                        	|
+|     **Javan Arabica**     	| 40%   	| 15%        	| 35%    	| $0.80          	| 25,000                        	|
+|        **Liberica**       	| 15%   	| 20%        	| 40%    	| $0.55          	| 20,000                        	|
+|   **Brazilian Arabica**   	| 25%   	| 30%        	| 15%    	| $0.70          	| 45,000                        	|
+| Wholesale Price Per Pound 	| \$1.25 	| \$1.50     	| \$1.40 	|                	|                               	|
+
+The processor's plant can handle no more than 100,000 pounds per week, but there is virtually unlimited demand for the final blends. However, the marketing department requires minimum production levels of 10,000, 25,000 and 30,000 pounds respectively, for the hotel, restaurant, and market blends.
+
+```{r, results=FALSE}
 lprec = make.lp(0,3)
 lp.control(lprec,sense="max")
+```
+```{r, results='asis'}
 set.objfn(lprec, c(0.5525,0.85,0.735))
 add.constraint(lprec,c(0.2,0.35,0.1),"<=",40000)
 add.constraint(lprec,c(0.4,0.15,0.35),"<=",25000)
@@ -118,7 +267,162 @@ add.constraint(lprec,c(0,1,0),"<=",25000)
 add.constraint(lprec,c(0,0,1),"<=",30000)
 
 solve(lprec)
-get.objective(lprec)
-get.variables(lprec)
-get.dual.solution(lprec)
+cat(paste(c('Objective Value: ',get.objective(lprec))))
+cat(paste(c('Variables: ',get.variables(lprec))))
+cat(paste(c('Solution: ',get.dual.solution(lprec))))
+```
+
+# Q11.1
+
+```{r}
+library(lpSolveAPI)
+DataForModel <- read.table(
+  "Week5_Q11_1.csv", 
+  sep=",", header=TRUE)
+
+NoOfConstraints <- ncol(DataForModel)-2
+NoOfVariables <-nrow(DataForModel)-1
+
+# We create a new empty model with NoOfConstraints rows and NoOfVariables columns
+lpModel <-make.lp(NoOfConstraints,NoOfVariables)
+
+#Name the model variables
+VariableNames <- t(DataForModel[1:NoOfVariables,1])
+#Name the constraints
+ConstraintNames <- colnames(DataForModel[3:(NoOfConstraints+2)])
+
+# maximize the profit 
+lp.control(lpModel, sense="max")
+
+# Setting all variable types to be binary
+for(i in 1:NoOfVariables){ 
+  set.type(lpModel,i,"binary")
+} 
+
+# Setting the appropriate data for each project, that translates to a column in the lpSolve equation
+for(i in 1:NoOfVariables){ 
+  set.column(lpModel, i, DataForModel[i,3:(NoOfConstraints+2)])
+} 
+# Each constraint provides the upper bound of rhs
+#set.constr.type(lpmodel,rep("<=", NoOfConstraints)) -> Use this if all your constraints are of the same inequality type
+set.constr.type(lpModel, c("<=", "<=", "<=", ">="))
+
+# Set the RHS values
+set.rhs(lpModel, DataForModel[(NoOfVariables+1),3:(NoOfConstraints+2)])
+
+#Check the model
+dimnames(lpModel) <- list(ConstraintNames, VariableNames)
+
+#Objective
+obj.profit <- DataForModel[1:NoOfVariables,2]
+set.objfn(lpModel, obj.profit)
+
+#Check the model
+lpModel
+# In order to be able to visually check the model, you can write the model to a text file 
+write.lp(lpModel,'modelQ11_1.lp',type='lp')
+
+# Solving the model
+solve(lpModel) 
+
+#get the solution 
+get.objective(lpModel)
+get.variables(lpModel)
+```
+
+
+# Q11.1
+```{r}
+library(lpSolveAPI)
+DataForModel <- read.table(
+  "Week5_ICA_Q1.csv", 
+  sep=";", header=TRUE)
+
+NoOfConstraints <- ncol(DataForModel)-2
+NoOfVariables <-nrow(DataForModel)-1
+
+# We create a new empty model with NoOfConstraints rows and NoOfVariables columns
+lpModel <-make.lp(NoOfConstraints,NoOfVariables)
+
+#Name the model variables
+VariableNames <- t(DataForModel[1:NoOfVariables,1])
+#Name the constraints
+ConstraintNames <- colnames(DataForModel[3:(NoOfConstraints+2)])
+
+# maximize the profit 
+lp.control(lpModel, sense="min")
+
+# Setting all variable types to be binary
+for(i in 1:4){ 
+  set.type(lpModel,i,"binary")
+} 
+
+# Setting the appropriate data for each project, that translates to a column in the lpSolve equation
+for(i in 1:NoOfVariables){ 
+  set.column(lpModel, i, DataForModel[i,3:(NoOfConstraints+2)])
+} 
+# Each constraint provides the upper bound of rhs
+#set.constr.type(lpmodel,rep("<=", NoOfConstraints)) -> Use this if all your constraints are of the same inequality type
+set.constr.type(lpModel, c(">=", ">=", ">=", "<=", "<=", "<=", "<=", "<=", "<=", ">="))
+
+# Set the RHS values
+set.rhs(lpModel, DataForModel[(NoOfVariables+1),3:(NoOfConstraints+2)])
+
+#Check the model
+dimnames(lpModel) <- list(ConstraintNames, VariableNames)
+
+#Objective
+obj.profit <- DataForModel[1:NoOfVariables,2]
+set.objfn(lpModel, obj.profit)
+
+#Check the model
+lpModel
+# In order to be able to visually check the model, you can write the model to a text file 
+write.lp(lpModel,'modelICA_Q1.lp',type='lp')
+
+# Solving the model
+solve(lpModel) 
+
+#get the solution 
+get.objective(lpModel)
+get.variables(lpModel)
+```
+
+# Research and Development Planning Simulation
+
+A firm is in the process of assessing the economic prospects for a new bottling machine it is developing. Future research and development expenses could range from \$4 to \$9 million, with a most likely value around \$7 million. The life of the product will be anywhere from 3 to 10 years. Yearly unit sales will range from 100 to 500, with a most likely value around 300. The machines will sell for between \$20,000 and \$25,000 each. The production cost of the machine is expected to be \$13,000 but could be as low as \$11,000 or as high as \$15,000. The firm's discount rate is 10%.
+
+* What is the expected NPV for this new machine over ten years?
+* What is the probablity of a positive NPV?
+
+```{r, results='asis'}
+NPV <- NULL
+
+for(j in 1:10000) { 
+#Variables
+RDCost <- rtriangle(n=1, 4000, 9000, 7000)
+ProdCost <- rtriangle(n=1, 11, 15, 13)
+Price <- runif(n=1, min=20, max=25)
+Sales <- rtriangle(n=1, 100, 500, 300)
+Life <- sample(3:10, 1)
+# Life <- sample(x = c(3, 4, 5, 6, 7, 8, 9, 10), size=1, prob=(1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8, 1/8), replace=T)  
+DiscountRate <- 0.1
+DiscountedValue <- RDCost * (-1)
+NPV_sub <- 0
+
+
+for(i in 1:Life) { 
+
+  DiscountedValue = DiscountedValue + ((Price - ProdCost) * Sales) / ((1 + DiscountRate)**i)
+  NPV_sub = NPV_sub + DiscountedValue
+  DiscountedValue <- 0
+  
+}
+
+NPV[j] <- NPV_sub 
+
+}
+
+hist(NPV)
+kable(as.array(summary(NPV)))
 ```
