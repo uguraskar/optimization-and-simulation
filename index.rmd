@@ -503,3 +503,26 @@ NPV[j] = NPV_sub
 hist(NPV)
 kable(as.array(summary(NPV)))
 ```
+
+# Final
+
+A jewelry store, which sells a single type of ring called Tektas, has 500 rings on hand and would like to order enough rings to satisfy customers' demands during the engagement season. Suppose that the demand for the ring at this store during the engagement season follows a discrete uniform distribution with a maximum value of 1500 and a minimum value of 750. The store receives deliveries of rings at the beginning of the season. For the delivery, the store pays a fixed cost of \$7000, plus a variable cost for every ring ordered, which can take at most \$10, at least \$5 and most probably \$7. Each Tektas is sold for \$200. The rings that cannot be sold during the season are sold to a discount store for a price that has normal distribution with mean \$100 and a standard deviation of \$5 per ring. The manager of the store orders 1000 rings for delivery at the beginning of the season. Use R to simulate the problem and find the expected profit of the store.
+
+```{r, results=FALSE}
+lprec = make.lp(0,3)
+lp.control(lprec,sense="max")
+```
+
+```{r, results='asis'}
+set.objfn(lprec, c(30,50,80))
+add.constraint(lprec,c(1,1,1),">=",500)
+add.constraint(lprec,c(-1,1,1),"<=",-50)
+add.constraint(lprec,c(2,1,2),"<=",1500)
+add.constraint(lprec,c(3,4,2),"<=",2800)
+add.constraint(lprec,c(2,3,3),"<=",1200)
+
+solve(lprec)
+cat(paste(c('Objective Value: ',get.objective(lprec))))
+cat(paste(c('Variables: ',get.variables(lprec))))
+cat(paste(c('Solution: ',get.dual.solution(lprec))))
+```
